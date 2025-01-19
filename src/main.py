@@ -13,9 +13,9 @@ def main():
     """
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
-    icon = pygame.image.load("msv/src/assets/icon.png")
+    icon = pygame.image.load("src/assets/icon.png")
     pygame.display.set_icon(icon)
-    pygame.display.set_caption("Sound to Sprite - Frequenzspektrum in Echtzeit")
+    pygame.display.set_caption("Spectrum Analyser")
     clock = pygame.time.Clock()
 
     audio_stream = AudioStream()
