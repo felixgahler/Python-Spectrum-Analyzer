@@ -5,7 +5,6 @@ from utilities import get_gradient_color
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, VOLUME_FACTOR
 from spectrum_visualizer import SpectrumVisualizer
 from audio_stream import AudioStream
-from helper import resource_path
 
 def main():
     """
@@ -14,7 +13,7 @@ def main():
     """
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
-    icon = pygame.image.load(resource_path("msv/src/assets/icon.png"))
+    icon = pygame.image.load("msv/src/assets/icon.png")
     pygame.display.set_icon(icon)
     pygame.display.set_caption("Sound to Sprite - Frequenzspektrum in Echtzeit")
     clock = pygame.time.Clock()
