@@ -15,7 +15,7 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF)
     icon = pygame.image.load("src/assets/icon.png")
     pygame.display.set_icon(icon)
-    pygame.display.set_caption("Spectrum Analyser")
+    pygame.display.set_caption("Spectrum Analyzer")
     clock = pygame.time.Clock()
 
     audio_stream = AudioStream()
