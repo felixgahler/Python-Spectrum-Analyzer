@@ -49,3 +49,7 @@ The following settings can be adjusted via the file config.py:
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
+<br>
+
+Last Edited on: 19/01/2025
+
