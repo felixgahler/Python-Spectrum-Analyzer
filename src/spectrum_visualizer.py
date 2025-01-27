@@ -21,6 +21,7 @@ class SpectrumVisualizer:
         self.spectrum_surface = pygame.Surface((self.screen_width, self.screen_height))
         self.labels_frequencies = [500, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000]
         self.x_offset = 50
+        self.current_mode = "Balken"
 
     def draw_grid(self):
         """
@@ -57,10 +58,25 @@ class SpectrumVisualizer:
         self.draw_grid()
 
         bar_width = self.screen_width // (self.n_samples // 2)
-        for i, height in enumerate(self.smoothed_magnitude):
-            bar_height = int(np.log10(height + 1) * 200)
-            bar_color = get_gradient_color(i, self.n_samples // 2 - 1, self.start_color, self.end_color)
-            pygame.draw.rect(self.spectrum_surface, bar_color, pygame.Rect(i * bar_width, self.screen_height - bar_height, bar_width, bar_height))
+        if self.current_mode == "Balken":
+            for i, height in enumerate(self.smoothed_magnitude):
+                bar_height = int(np.log10(height + 1) * 200)
+                bar_color = get_gradient_color(i, self.n_samples // 2 - 1, self.start_color, self.end_color)
+                pygame.draw.rect(self.spectrum_surface, bar_color, pygame.Rect(i * bar_width, self.screen_height - bar_height, bar_width, bar_height))
+        elif self.current_mode == "Wellen":
+            points = []
+            for i, height in enumerate(self.smoothed_magnitude):
+                x = i * bar_width
+                y = self.screen_height - int(np.log10(height + 1) * 200)
+                points.append((x, y))
+            if len(points) > 1:
+                pygame.draw.lines(self.spectrum_surface, self.start_color, False, points, 2)
+        elif self.current_mode == "Punkte":
+            for i, height in enumerate(self.smoothed_magnitude):
+                x = i * bar_width
+                y = self.screen_height - int(np.log10(height + 1) * 200)
+                color = get_gradient_color(i, self.n_samples // 2 - 1, self.start_color, self.end_color)
+                pygame.draw.circle(self.spectrum_surface, color, (int(x), int(y)), 3)
 
         font = pygame.font.Font(None, 24)
         for freq in self.labels_frequencies:
@@ -73,3 +89,24 @@ class SpectrumVisualizer:
 
         self.screen.blit(self.spectrum_surface, (0, 0))
         pygame.display.flip()
+
+    def clear(self):
+        """
+        Löscht die Visualisierung und zeigt nur das Grundraster
+        """
+        self.spectrum_surface.fill(self.background_color)
+        self.draw_grid()
+        self.screen.blit(self.spectrum_surface, (0, 0))
+
+    def set_mode(self, mode):
+        """
+        Ändert den Visualisierungsmodus
+        """
+        self.current_mode = mode
+        
+    def set_colors(self, start_color, end_color):
+        """
+        Ändert das Farbschema
+        """
+        self.start_color = start_color
+        self.end_color = end_color

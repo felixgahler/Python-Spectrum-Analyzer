@@ -2,3 +2,4 @@ pyaudio
 numpy
 pygame
 scipy
+PyQt5
