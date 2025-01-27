@@ -2,10 +2,11 @@ import pygame
 import numpy as np
 from scipy.fftpack import fft
 from utilities import get_gradient_color
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, VOLUME_FACTOR
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, VOLUME_FACTOR, COLOR_SCHEMES, VISUALIZATION_MODES
 from spectrum_visualizer import SpectrumVisualizer
 from audio_stream import AudioStream
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QSlider, QLabel, QHBoxLayout
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+                            QPushButton, QSlider, QLabel, QHBoxLayout, QComboBox, QFileDialog)
 from PyQt5.QtCore import Qt, QTimer
 
 class ControlWindow(QMainWindow):
@@ -13,45 +14,101 @@ class ControlWindow(QMainWindow):
         super().__init__()
         self.audio_callback = audio_callback
         self.is_recording = False
+        self.is_saving = False
         self.volume = 1.0
+        self.recorded_data = []
         self.initUI()
         
     def initUI(self):
         self.setWindowTitle('Controls')
-        self.setGeometry(0, SCREEN_HEIGHT + 50, SCREEN_WIDTH, 100)
+        self.setGeometry(0, SCREEN_HEIGHT + 50, SCREEN_WIDTH, 150)  # Höhe vergrößert
         
         # Zentrales Widget und Layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QHBoxLayout(central_widget)
+        main_layout = QVBoxLayout(central_widget)
         
-        # Play/Stop Button
-        self.play_button = QPushButton('Play')
+        # Obere Reihe
+        top_row = QHBoxLayout()
+        
+        # Start/Stop Button
+        self.play_button = QPushButton('Start')
         self.play_button.clicked.connect(self.toggle_recording)
-        layout.addWidget(self.play_button)
+        top_row.addWidget(self.play_button)
         
-        # Lautstärke Label
+        # Aufnahme Button
+        self.record_button = QPushButton('Aufnahme Start')
+        self.record_button.clicked.connect(self.toggle_recording_save)
+        top_row.addWidget(self.record_button)
+        
+        # Visualisierungsmodus Dropdown
+        viz_label = QLabel('Visualisierung:')
+        top_row.addWidget(viz_label)
+        self.viz_mode_combo = QComboBox()
+        self.viz_mode_combo.addItems(VISUALIZATION_MODES)
+        top_row.addWidget(self.viz_mode_combo)
+        
+        # Farbschema Dropdown
+        color_label = QLabel('Farbschema:')
+        top_row.addWidget(color_label)
+        self.color_scheme_combo = QComboBox()
+        self.color_scheme_combo.addItems(COLOR_SCHEMES.keys())
+        top_row.addWidget(self.color_scheme_combo)
+        
+        main_layout.addLayout(top_row)
+        
+        # Untere Reihe
+        bottom_row = QHBoxLayout()
+        
+        # Lautstärke Label und Slider
         volume_label = QLabel('Lautstärke:')
-        layout.addWidget(volume_label)
+        bottom_row.addWidget(volume_label)
         
-        # Lautstärke Slider
         self.volume_slider = QSlider(Qt.Horizontal)
         self.volume_slider.setMinimum(0)
         self.volume_slider.setMaximum(200)
         self.volume_slider.setValue(100)
         self.volume_slider.valueChanged.connect(self.update_volume)
-        layout.addWidget(self.volume_slider)
+        bottom_row.addWidget(self.volume_slider)
+        
+        main_layout.addLayout(bottom_row)
         
     def toggle_recording(self):
         self.is_recording = not self.is_recording
-        self.play_button.setText('Stop' if self.is_recording else 'Play')
+        self.play_button.setText('Stop' if self.is_recording else 'Start')
         print("Aufnahme gestartet..." if self.is_recording else "Aufnahme gestoppt.")
+        
+    def toggle_recording_save(self):
+        self.is_saving = not self.is_saving
+        if self.is_saving:
+            self.recorded_data = []
+            self.record_button.setText('Aufnahme Stop')
+            print("Aufnahme wird gespeichert...")
+        else:
+            self.record_button.setText('Aufnahme Start')
+            self.save_recording()
+            
+    def save_recording(self):
+        if self.recorded_data:
+            file_name, _ = QFileDialog.getSaveFileName(self, 
+                "Aufnahme speichern", 
+                "recording.npy",
+                "NumPy Files (*.npy)")
+            if file_name:
+                np.save(file_name, np.array(self.recorded_data))
+                print(f"Aufnahme gespeichert als: {file_name}")
         
     def update_volume(self):
         self.volume = self.volume_slider.value() / 100.0
         
     def get_state(self):
-        return self.is_recording, self.volume
+        return {
+            'is_recording': self.is_recording,
+            'is_saving': self.is_saving,
+            'volume': self.volume,
+            'viz_mode': self.viz_mode_combo.currentText(),
+            'color_scheme': self.color_scheme_combo.currentText()
+        }
 
 def main():
     """
@@ -86,11 +143,19 @@ def main():
                 return
         
         # Status vom Kontrollfenster holen
-        is_recording, volume = control_window.get_state()
+        state = control_window.get_state()
         
         # Visualisierung aktualisieren
-        if is_recording:
-            audio_data = audio_stream.get_audio_data(volume_factor=volume)
+        if state['is_recording']:
+            audio_data = audio_stream.get_audio_data(volume_factor=state['volume'])
+            if state['is_saving']:
+                control_window.recorded_data.append(audio_data.copy())
+            
+            # Visualisierungsmodus und Farbschema aktualisieren
+            visualizer.set_mode(state['viz_mode'])
+            color_scheme = COLOR_SCHEMES[state['color_scheme']]
+            visualizer.set_colors(*color_scheme)
+            
             visualizer.update(audio_data)
         else:
             visualizer.clear()
