@@ -5,16 +5,21 @@ from scipy.fft import fft, ifft
 from config import VOLUME_FACTOR, EQ_BANDS, EFFECTS, SCALES, KEYS
 
 class AudioStream:
-    def __init__(self, rate=44100, channels=1, buffer_size=1024):
+    def __init__(self, rate=44100, channels=1, buffer_size=2048):
         """
-        inits audio stream with specified settings
+        Initialisiert den Audio-Stream mit grundlegenden Einstellungen
         """
         self.rate = rate
         self.channels = channels
         self.buffer_size = buffer_size
         self.audio = pyaudio.PyAudio()
+        
+        # Verfügbare Eingabegeräte ausgeben
+        self.print_input_devices()
+        
+        # Audio-Stream mit Float32
         self.stream = self.audio.open(
-            format=pyaudio.paInt16,
+            format=pyaudio.paFloat32,
             channels=self.channels,
             rate=self.rate,
             input=True,
@@ -23,11 +28,11 @@ class AudioStream:
         self.window = np.hanning(self.buffer_size)
         self.eq_gains = [1.0] * len(EQ_BANDS)
         self._init_eq_filters()
-        self.echo_buffer = np.zeros(int(rate * 1.0))  # 1 Sekunde Echo-Buffer
-        self.reverb_buffer = np.zeros(int(rate * 2.0))  # 2 Sekunden Reverb-Buffer
-        self.effects = EFFECTS.copy()
         
-        # Neue Buffer und Zustände für die Effekte
+        # Buffer für Effekte
+        self.echo_buffer = np.zeros(int(rate * 1.0))
+        self.reverb_buffer = np.zeros(int(rate * 2.0))
+        self.effects = EFFECTS.copy()
         self.flanger_phase = 0
         self.flanger_buffer = np.zeros(rate)
         self.autotune_buffer = np.zeros(buffer_size * 2)
@@ -66,18 +71,16 @@ class AudioStream:
         # Separate gefilterte Signale für jedes Band
         filtered_signals = []
         for i, (b, a) in enumerate(self.eq_filters):
-            filtered = lfilter(b, a, float_data)
-            filtered_signals.append(filtered * self.eq_gains[i])
+            if self.eq_gains[i] != 1.0:  # Nur filtern wenn Gain nicht neutral
+                filtered = lfilter(b, a, float_data)
+                filtered_signals.append(filtered * self.eq_gains[i])
+            else:
+                filtered_signals.append(float_data / len(self.eq_filters))
         
         # Kombiniere alle gefilterten Signale
         output = np.sum(filtered_signals, axis=0)
         
-        # Normalisierung und Rückkonvertierung zu int16
-        max_val = np.max(np.abs(output))
-        if max_val > 0:
-            output = output / max_val * 32767
-        
-        return output.astype(np.int16)
+        return output
 
     def apply_echo(self, data):
         """
@@ -247,31 +250,39 @@ class AudioStream:
         
         return data * self.ducking_envelope
 
+    def print_input_devices(self):
+        """
+        Gibt alle verfügbaren Audio-Eingabegeräte aus
+        """
+        print("\nVerfügbare Audio-Eingabegeräte:")
+        for i in range(self.audio.get_device_count()):
+            dev_info = self.audio.get_device_info_by_index(i)
+            if dev_info['maxInputChannels'] > 0:  # Nur Eingabegeräte
+                print(f"Device {i}: {dev_info['name']}")
+                print(f"   Kanäle: {dev_info['maxInputChannels']}")
+                print(f"   Sample Rate: {int(dev_info['defaultSampleRate'])}")
+        print()
+
     def get_audio_data(self, volume_factor=VOLUME_FACTOR):
         """
         Liest und verarbeitet Audiodaten
         """
-        data = self.stream.read(self.buffer_size, exception_on_overflow=False)
-        audio_data = np.frombuffer(data, dtype=np.int16)
-        
-        # Equalizer anwenden
-        audio_data = self.apply_eq(audio_data)
-        
-        # Lautstärke anpassen
-        audio_data = audio_data * volume_factor
-        
-        # Fensterung anwenden
-        audio_data = audio_data * self.window
-        
-        # Effekte anwenden
-        audio_data = self.apply_echo(audio_data)
-        audio_data = self.apply_reverb(audio_data)
-        audio_data = self.apply_flanger(audio_data)
-        audio_data = self.apply_autotune(audio_data)
-        audio_data = self.apply_sidechain(audio_data)
-        audio_data = self.apply_ducking(audio_data)
-        
-        return np.clip(audio_data, -32768, 32767).astype(np.int16)
+        try:
+            # Rohdaten lesen
+            data = self.stream.read(self.buffer_size, exception_on_overflow=False)
+            audio_data = np.frombuffer(data, dtype=np.float32)
+            
+            # Einfache Lautstärkeanpassung
+            audio_data = audio_data * volume_factor
+            
+            # Konvertierung zu int16 für die Visualisierung
+            audio_data = np.clip(audio_data * 32768.0, -32768, 32767).astype(np.int16)
+            
+            return audio_data
+            
+        except Exception as e:
+            print(f"Fehler bei der Audioaufnahme: {str(e)}")
+            return np.zeros(self.buffer_size, dtype=np.int16)
 
     def set_eq_gain(self, band_index, gain):
         """
@@ -282,7 +293,7 @@ class AudioStream:
 
     def stop(self):
         """
-        Stops the audio stream and releases resources
+        Beendet den Audio-Stream und gibt Ressourcen frei
         """
         self.stream.stop_stream()
         self.stream.close()

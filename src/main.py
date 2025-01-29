@@ -210,7 +210,6 @@ class ControlWindow(QMainWindow):
     def save_recording(self):
         if self.recorded_data:
             try:
-                # Dialog zum Speichern der Datei
                 file_name, _ = QFileDialog.getSaveFileName(self, 
                     "Aufnahme speichern", 
                     "recording.wav",
@@ -220,8 +219,13 @@ class ControlWindow(QMainWindow):
                     # Konvertiere die Numpy Arrays in ein einzelnes Array
                     audio_data = np.concatenate(self.recorded_data)
                     
+                    # Normalisierung vor dem Speichern
+                    max_val = np.max(np.abs(audio_data))
+                    if max_val > 0:
+                        audio_data = audio_data / max_val * 32767
+                    
                     # Als WAV-Datei speichern
-                    sf.write(file_name, audio_data, 44100)  # 44100 ist die Sample Rate
+                    sf.write(file_name, audio_data, 44100, 'PCM_16')
                     
                     print(f"Aufnahme gespeichert als: {file_name}")
             except Exception as e:
