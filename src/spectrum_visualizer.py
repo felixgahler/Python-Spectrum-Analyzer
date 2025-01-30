@@ -3,8 +3,8 @@ import numpy as np
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, COLOR_SCHEMES, VISUALIZATION_MODES
 from spectrum_visualizer import SpectrumVisualizer
 from audio_stream import AudioStream
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QSlider, QLabel, QHBoxLayout, QComboBox, QFileDialog)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QComboBox, QFileDialog)
+from PyQt5.QtCore import QTimer
 
 class ControlWindow(QMainWindow):
     """

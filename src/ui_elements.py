@@ -47,16 +47,10 @@ class Slider:
         self.font = pygame.font.Font(None, 24)
         
     def draw(self, screen):
-        # Slider-Hintergrund
         pygame.draw.rect(screen, (100, 100, 100), self.rect)
-        
-        # Slider-Position berechnen
         pos = self.rect.x + (self.value - self.min_val) / (self.max_val - self.min_val) * self.rect.width
-        
-        # Slider-Knopf
         pygame.draw.circle(screen, (200, 200, 200), (int(pos), self.rect.centery), 10)
         
-        # Text und Wert
         text_surface = self.font.render(f"{self.text}: {self.value:.2f}", True, (255, 255, 255))
         screen.blit(text_surface, (self.rect.x, self.rect.y - 20))
         
