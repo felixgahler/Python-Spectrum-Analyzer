@@ -22,10 +22,14 @@ class SpectrumVisualizer:
         self.y_ext = [round(0.05*self.screen_height), self.screen_height]
         
         # Sensitivity settings
-        self.amplification = 2.0  # Reduziert von 5.0
-        self.noise_threshold = 0.001  # Schwellenwert für Rauschunterdrückung
-        self.smoothing_factor = 0.2  # Für weichere Übergänge
+        self.amplification = 0.3  # Stark reduziert für bessere Skalierung
+        self.noise_threshold = 0.005
+        self.smoothing_factor = 0.3
         self.previous_magnitude = None
+        
+        # Scaling settings
+        self.scale_factor = 50.0  # Skalierungsfaktor für die Magnitude
+        self.log_scale = True  # Logarithmische Skalierung für bessere Dynamik
         
         # Color settings
         self.cm = cm.plasma
@@ -81,8 +85,15 @@ class SpectrumVisualizer:
         fft_data = fft(audio_data)
         magnitude = np.abs(fft_data[:self.n_frequency_bins]) / (len(audio_data) // 2)
         
-        # Apply noise gate and smoothing
+        # Apply noise gate
         magnitude[magnitude < self.noise_threshold] = 0
+        
+        # Apply logarithmic scaling if enabled
+        if self.log_scale:
+            # Add small constant to avoid log(0)
+            magnitude = np.log10(magnitude * self.scale_factor + 1)
+        else:
+            magnitude = magnitude * self.scale_factor
         
         # Smoothing
         if self.previous_magnitude is None:
