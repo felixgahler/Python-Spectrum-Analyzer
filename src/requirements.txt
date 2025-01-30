@@ -2,3 +2,5 @@ pyaudio
 numpy
 pygame
 scipy
+PyQt5
+matplotlib

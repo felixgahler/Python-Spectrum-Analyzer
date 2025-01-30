@@ -18,3 +18,16 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+rfft/.gitignore
+rfft/LICENSE
+rfft/README.md
+rfft/requirements.txt
+rfft/run_FFT_analyzer.py
+rfft/assets/teaser.gif
+rfft/assets/usage.png
+rfft/src/fft.py
+rfft/src/stream_analyzer.py
+rfft/src/stream_reader_pyaudio.py
+rfft/src/stream_reader_sounddevice.py
+rfft/src/utils.py
+rfft/src/visualizer.py
