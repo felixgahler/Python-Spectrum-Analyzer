@@ -21,6 +21,12 @@ class SpectrumVisualizer:
         self.add_fast_bars = True
         self.y_ext = [round(0.05*self.screen_height), self.screen_height]
         
+        # Sensitivity settings
+        self.amplification = 2.0  # Reduziert von 5.0
+        self.noise_threshold = 0.001  # Schwellenwert für Rauschunterdrückung
+        self.smoothing_factor = 0.2  # Für weichere Übergänge
+        self.previous_magnitude = None
+        
         # Color settings
         self.cm = cm.plasma
         self.fast_bar_colors = [list((255*np.array(self.cm(i))[:3]).astype(int)) 
@@ -75,6 +81,16 @@ class SpectrumVisualizer:
         fft_data = fft(audio_data)
         magnitude = np.abs(fft_data[:self.n_frequency_bins]) / (len(audio_data) // 2)
         
+        # Apply noise gate and smoothing
+        magnitude[magnitude < self.noise_threshold] = 0
+        
+        # Smoothing
+        if self.previous_magnitude is None:
+            self.previous_magnitude = magnitude
+        else:
+            magnitude = self.smoothing_factor * magnitude + (1 - self.smoothing_factor) * self.previous_magnitude
+            self.previous_magnitude = magnitude
+        
         # Update FPS
         if self.start_time is None:
             self.start_time = time.time()
@@ -109,7 +125,7 @@ class SpectrumVisualizer:
         local_height = self.y_ext[1] - self.y_ext[0]
         
         for i in range(self.n_frequency_bins):
-            feature_value = magnitude[i] * local_height * 5  # Amplify for better visibility
+            feature_value = magnitude[i] * local_height * self.amplification
             
             # Update fast bars
             self.fast_bars[i][3] = int(feature_value)
