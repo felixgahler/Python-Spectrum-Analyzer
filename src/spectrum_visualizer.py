@@ -11,7 +11,6 @@ class ControlWindow(QMainWindow):
     Main control window class that handles the UI elements and audio processing settings.
     Provides controls for volume, EQ, frequency ranges, and visualization options.
     """
-    
     def __init__(self, audio_callback):
         """
         Initialize the control window with default audio settings and UI elements.
@@ -65,8 +64,6 @@ class ControlWindow(QMainWindow):
         top_row.addWidget(self.color_scheme_combo)
         
         main_layout.addLayout(top_row)
-        
-        [... rest of the UI initialization code ...]
 
     def update_eq_low(self):
         """
