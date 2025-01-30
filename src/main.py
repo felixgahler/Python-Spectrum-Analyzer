@@ -51,11 +51,27 @@ class ControlWindow(QtWidgets.QWidget):
 
     def init_ui(self):
         self.setWindowTitle('Control Panel')
-        self.setGeometry(100, 100, 300, 100)
+        self.setGeometry(100, 100, 300, 150)
+        
+        # Layout
+        layout = QtWidgets.QVBoxLayout()
+        
+        # Start/Stop Button
         self.start_button = QtWidgets.QPushButton('Start', self)
         self.start_button.clicked.connect(self.toggle_stream)
-        layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.start_button)
+        
+        # Colormap Dropdown
+        colormap_layout = QtWidgets.QHBoxLayout()
+        colormap_label = QtWidgets.QLabel('Farbschema:', self)
+        self.colormap_combo = QtWidgets.QComboBox(self)
+        self.colormap_combo.addItems(list(self.visualizer.available_colormaps.keys()))
+        self.colormap_combo.currentTextChanged.connect(self.change_colormap)
+        
+        colormap_layout.addWidget(colormap_label)
+        colormap_layout.addWidget(self.colormap_combo)
+        layout.addLayout(colormap_layout)
+        
         self.setLayout(layout)
 
     def update_visualization(self):
@@ -71,6 +87,9 @@ class ControlWindow(QtWidgets.QWidget):
         else:
             self.audio_stream = AudioStream()
             self.start_button.setText('Stop')
+
+    def change_colormap(self, colormap_name):
+        self.visualizer.set_colormap(colormap_name)
 
 app = QtWidgets.QApplication([])
 
